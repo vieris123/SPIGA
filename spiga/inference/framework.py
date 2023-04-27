@@ -4,6 +4,8 @@ import copy
 import torch
 import numpy as np
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # Paths
 weights_path_dft = pkg_resources.resource_filename('spiga', 'models/weights')
 
@@ -52,7 +54,7 @@ class SPIGAFramework:
             model_state_dict = torch.load(weights_file)
 
         self.model.load_state_dict(model_state_dict)
-        self.model = self.model.cuda(gpus[0])
+        self.model = self.model.to(device)
         self.model.eval()
         print('SPIGA model loaded!')
 
