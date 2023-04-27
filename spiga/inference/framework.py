@@ -5,7 +5,6 @@ import torch
 import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 # Paths
 weights_path_dft = pkg_resources.resource_filename('spiga', 'models/weights')
 
@@ -159,5 +158,5 @@ class SPIGAFramework:
                 data[k] = self._data2device(v)
         else:
             with torch.no_grad():
-                data_var = data.cuda(device=self.gpus[0], non_blocking=True)
+                data_var = data.to(device)
         return data_var
