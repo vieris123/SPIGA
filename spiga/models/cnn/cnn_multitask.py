@@ -62,7 +62,8 @@ class MultitaskCNN(nn.Module):
 
         x = self.pre(imgs)
         outputs = {'VisualField': [],
-                   'HGcore': []}
+                   'HGcore': [],
+                   'Heatmaps': []}
 
         core_raw = []
         for i in range(self.nstack):
@@ -83,7 +84,7 @@ class MultitaskCNN(nn.Module):
                 edges = self.outs_edges[i](hg)
                 edges_ext = self.E2Ptransform(edges)
                 point_edges = points * edges_ext
-
+                outputs['Heatmaps'].append([points, edges])
                 # Landmarks
                 maps = self.outs_features[i](hg)
                 preds = maps * point_edges

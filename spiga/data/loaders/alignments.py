@@ -5,7 +5,9 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
-
+import copy
+import torch
+from torch.nn.functional import F
 from spiga.data.loaders.transforms import get_transformers
 
 
@@ -140,8 +142,48 @@ class AlignmentsDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
+    def _gt_pointmap(self, points, scale = 0.25, sigma=1.5):
+        h, w = self.image_size
+        pointmaps = []
+        for i in range(len(points)):
+            pointmap = np.zeros([h, w], dtype=np.float32)
+            # align_corners: False.
+            point = copy.deepcopy(points[i])
+            point[0] = max(0, min(w - 1, point[0]))
+            point[1] = max(0, min(h - 1, point[1]))
+            pointmap = self._circle(pointmap, point, sigma=sigma)
 
+            pointmaps.append(pointmap)
+        pointmaps = np.stack(pointmaps, axis=0) / 255.0
+        pointmaps = torch.from_numpy(pointmaps).float().unsqueeze(0)
+        pointmaps = F.interpolate(pointmaps, size=(int(w * scale), int(h * scale)), mode='bilinear',
+                                  align_corners=False).squeeze()
+        return pointmaps
+    def _gt_heatmap(self, points, scale = 0.25, thickness = 1):
+        h, w = self.image_size
+        edgemaps = []
+        for is_closed, indices in self.edge_info:
+            edgemap = np.zeros([h, w], dtype=np.float32)
+            # align_corners: False.
+            part = copy.deepcopy(points[np.array(indices)])
 
+            part = self._fit_curve(part, is_closed)
+            part[:, 0] = np.clip(part[:, 0], 0, w - 1)
+            part[:, 1] = np.clip(part[:, 1], 0, h - 1)
+            edgemap = self._polylines(edgemap, part, is_closed, 255, thickness)
+
+            # offset = 0.5
+            # part = (part + offset).astype(np.int32)
+            # part[:, 0] = np.clip(part[:, 0], 0, w-1)
+            # part[:, 1] = np.clip(part[:, 1], 0, h-1)
+            # cv2.polylines(edgemap, [part], is_closed, 255, thickness, cv2.LINE_AA)
+
+            edgemaps.append(edgemap)
+        edgemaps = np.stack(edgemaps, axis=0) / 255.0
+        edgemaps = torch.from_numpy(edgemaps).float().unsqueeze(0)
+        edgemaps = F.interpolate(edgemaps, size=(int(w * scale), int(h * scale)), mode='bilinear',
+                                 align_corners=False).squeeze()
+        return edgemaps
 def get_dataset(data_config, pretreat=None, debug=False):
 
     augmentors = get_transformers(data_config)

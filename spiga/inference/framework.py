@@ -11,6 +11,16 @@ import spiga.inference.pretreatment as pretreat
 from spiga.models.spiga import SPIGA
 from spiga.inference.config import ModelConfig
 
+class FeatureHook:
+    def __init__(self, model):
+        self.model = model
+        self.features = None
+        self.hook = self.model.visual_cnn.outs_features[2].register_forward_hook(self.hook_fn)
+    def hook_fn(self, module, input, output):
+        self.features = output
+        self.inp = input
+    def remove(self):
+        self.hook.remove()
 
 class SPIGAFramework:
 
@@ -68,6 +78,20 @@ class SPIGAFramework:
         outputs = self.net_forward(batch_crops)
         features = self.postreatment(outputs, crop_bboxes, bboxes)
         return features
+
+    def forward(self, image, bboxes):
+        batch_crops, crop_bboxes = self.pretreat(image, bboxes)
+        features = self.net_forward(batch_crops)
+        return features
+
+    def get_heatmap(self, image, bboxes):
+        fe = FeatureHook(self.model)
+        batch_crops, crop_bboxes = self.pretreat(image, bboxes)
+        self.net_forward(batch_crops)
+        input = fe.inp
+        output = fe.features
+        fe.remove()
+        return input, output
 
     def pretreat(self, image, bboxes):
         crop_bboxes = []
