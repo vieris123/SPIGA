@@ -12,7 +12,7 @@ class BasicLayout:
               'white': (255, 255, 255),
               'black': (0, 0, 0)}
 
-    thickness_dft = {'circle': 2}
+    thickness_dft = {'circle': 2, 'line': 1}
 
     def __init__(self):
         self.thickness = self.thickness_dft
@@ -24,6 +24,15 @@ class BasicLayout:
         for xy in coord_list:
             xy = np.array(xy + 0.5, dtype=int)
             canvas = cv2.circle(canvas, (xy[0], xy[1]), thick, color, -1)
+        return canvas
+
+    def draw_lines(self, canvas, start_point, coord_list, color=colors['purple'], thick=None):
+        if thick is None:
+            thick = self.thickness['line']
+        start_point = (np.array(start_point + 0.5, dtype=int))
+        for xy in coord_list:
+            xy = np.array(xy + 0.5, dtype=int)
+            canvas = cv2.line(canvas, start_point, xy, color, thickness=thick)
         return canvas
 
     def update_thickness(self, thick_dict):

@@ -11,7 +11,9 @@ class LandmarkLayout(BasicLayout):
     def __init__(self):
         super().__init__()
 
-    def draw_landmarks(self, image, landmarks, visible=None, mask=None,
+
+
+    def draw_landmarks(self, image, landmarks, start_point=None, end_point=None, visible=None, mask=None,
                        thick=None, colors=(BasicLayout.colors['green'], BasicLayout.colors['red'])):
 
         # Initialize variables if need it
@@ -39,6 +41,8 @@ class LandmarkLayout(BasicLayout):
         # Plot landmarks
         canvas = self.draw_circles(image, ldm_vis, color=colors[0], thick=thick)
         canvas = self.draw_circles(canvas, ldm_notvis, color=colors[1], thick=thick)
+        if start_point:
+            canvas = self.draw_lines(canvas, landmarks[start_point], [landmarks[i] for i in end_point], thick=thick-1)
         return canvas
 
     @ staticmethod
